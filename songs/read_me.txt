@@ -1,0 +1,1 @@
+This folder must contain the songs you want to include in your database, they must be .wav files in mono sound (careful not to upload stereo as the program won't work).
