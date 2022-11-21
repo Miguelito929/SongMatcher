@@ -48,9 +48,31 @@ def load_libraries():
         subprocess.check_call([sys.executable, "-m", "pip", "install", "os"])
     except Exception as e:
         print(e)
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "tkinter"])
+    except Exception as e:
+        print(e)
+    try:
+        subprocess.check_call(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "matplotlib.backends.backend_tkagg",
+            ]
+        )
+    except Exception as e:
+        print(e)
+    try:
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "FigureCanvasTkAgg"]
+        )
+    except Exception as e:
+        print(e)
 
 
-# load_libraries()
+load_libraries()
 
 # Librerias que utilizaremos
 import os
@@ -70,17 +92,10 @@ import wave
 import contextlib
 from pydub import AudioSegment
 from pydub.playback import play
+import tkinter as tk
 from tkinter import Tk, Label, Button
 from tkinter import *
-import tkinter as tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
-
-# Cargamos nuestra base de datos (canciones en buena calidad) y nuestras muestras de audio
-
-"""Ya que tenemos nuestras canciones, debemos poder identificarlas de una manera concisa, 
-esto sera por medio de los picos resultantes de aplicarles la transformada rapida de furier. 
-Estos representaran la identidad de cada cancion"""
 
 root = tk.Tk()
 root.title("Song Matcher")
@@ -91,29 +106,31 @@ root.config(bg="lightblue")
 root.config(bd=15)
 root.config(relief="ridge")
 
-frame2 = Frame(root, width=480, height=320)
+frame2 = Frame(root, width=0, height=0)
 frame2.pack(fill="both", expand=1, side=BOTTOM)
 frame2.config(cursor="heart")
 frame2.config(bg="lightblue")
 frame2.config(bd=25)
 frame2.config(relief="sunken")
 
-frame1 = Frame(root, width=480, height=320)
+frame1 = Frame(root, width=0, height=0)
 frame1.pack(fill="both", expand=1, side=BOTTOM)
-frame1.config(cursor="pirate")
+frame1.config(cursor="heart")
 frame1.config(bg="lightblue")
 frame1.config(bd=25)
 frame1.config(relief="sunken")
 
-label1 = Label(frame1, text="Recording")
-label1.pack()
-label2 = Label(frame2, text="Song slice")
-label2.pack()
 
-
-def graphs(hz, song_data, fr):
+def graphs(hz, song_data, fr, name, pos):
     for widget in fr.winfo_children():
         widget.destroy()
+    if name != None:
+        title = name + " at " + pos
+        label2 = Label(frame2, text=title)
+        label2.pack()
+    else:
+        label1 = Label(frame1, text="Recording")
+        label1.pack()
 
     # graph 1
     figure1 = plt.Figure(figsize=(3, 2), dpi=100)
@@ -379,7 +396,7 @@ def get_song_slice(hashes, fname, rec_time):
 database = load_database()
 
 
-def top_3(file_name, time):
+def best_match(file_name, time):
     # Load a short recording with some background noise
     hz_recording, song_data_recording = read(file_name)
     # Create the constellation and hashes
@@ -399,7 +416,7 @@ def top_3(file_name, time):
         print("\nBest Match:")
         print(f"{name}: {score[1]} matches con desfase de {score[0]}\n")
 
-    graphs(hz_recording, song_data_recording, frame1)
+    graphs(hz_recording, song_data_recording, frame1, None, None)
 
     print("Finished recording \n")
     print("Finding best song slice match, please wait...")
@@ -408,7 +425,7 @@ def top_3(file_name, time):
     dirname = os.path.dirname(__file__)
     file = os.path.join(dirname, "snippet.wav")
     hz_song_slice, song_slice_data = read(file)
-    graphs(hz_song_slice, song_slice_data, frame2)
+    graphs(hz_song_slice, song_slice_data, frame2, name, pos)
     delete_extra_files()
     return [name, pos]
 
@@ -430,7 +447,7 @@ def record(duration):
     write("recording0.wav", frequency, recording)
     dirname = os.path.dirname(__file__)
     file = os.path.join(dirname, "recording0.wav")
-    name_pos = top_3(file, duration)
+    name_pos = best_match(file, duration)
     return name_pos
 
 
@@ -457,11 +474,7 @@ def delete_extra_files():
 
 # Interfaz
 
-fields = (
-    "Duración",
-    "Canción",
-    "Posición",
-)
+fields = ("Duración", "Canción", "Posición", "Canciones disponibles")
 
 
 def Grabar(entries):
@@ -474,14 +487,34 @@ def Grabar(entries):
     entries["Posición"].insert(0, name_pos[1])
 
 
+song_tuples = list(sorted(song_name_index.items(), key=lambda x: x[1][1]))
+song_list = []
+for i in song_tuples:
+    song_list.append(i[1])
+song_str = ""
+for i in song_list:
+    n = i.split(".")
+    n = n[0]
+    j = 0
+    while n[j : j + 5] != "songs":
+        j += 1
+    n = n[j + 6 :]
+    if i != song_list[-1]:
+        song_str = song_str + n + ", "
+    else:
+        song_str = song_str + n
+
+
 def makeform(root, fields):
     entries = {}
     for field in fields:
         row = tk.Frame(root)
-        lab = tk.Label(row, width=22, text=field + ": ", anchor="w")
-        ent = tk.Entry(row)
+        lab = tk.Label(row, width=20, text=field + ": ", anchor="w")
+        ent = tk.Entry(row, width=180)
         if field == "Duración":
-            ent.insert(0, "5")
+            ent.insert(0, "8")
+        elif field == "Canciones disponibles":
+            ent.insert(0, song_str)
         else:
             ent.insert(0, "(dejar en blanco)")
         row.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
