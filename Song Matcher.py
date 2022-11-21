@@ -1,7 +1,3 @@
-# Identificador de Canciones
-# Alejandra Velasco y Miguel Perez
-# Buscamos que este programa determine a partir de un audio que cancion contiene sin importar las conversaciones de fondo, ruido o baja calidad del mismo.
-
 import sys
 import subprocess
 
@@ -54,7 +50,7 @@ def load_libraries():
         print(e)
 
 
-load_libraries()
+# load_libraries()
 
 # Librerias que utilizaremos
 import os
@@ -74,6 +70,10 @@ import wave
 import contextlib
 from pydub import AudioSegment
 from pydub.playback import play
+from tkinter import Tk, Label, Button
+from tkinter import *
+import tkinter as tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 # Cargamos nuestra base de datos (canciones en buena calidad) y nuestras muestras de audio
@@ -82,52 +82,91 @@ from pydub.playback import play
 esto sera por medio de los picos resultantes de aplicarles la transformada rapida de furier. 
 Estos representaran la identidad de cada cancion"""
 
-# key = hash (numero grande con binned frequencies y delta), value = lista de tuples con tiempo de pico ancla y song_id
-# database es la union de todos los hashes
+root = tk.Tk()
+root.title("Song Matcher")
+root.resizable(1, 1)
+
+root.config(cursor="arrow")
+root.config(bg="lightblue")
+root.config(bd=15)
+root.config(relief="ridge")
+
+frame2 = Frame(root, width=480, height=320)
+frame2.pack(fill="both", expand=1, side=BOTTOM)
+frame2.config(cursor="heart")
+frame2.config(bg="lightblue")
+frame2.config(bd=25)
+frame2.config(relief="sunken")
+
+frame1 = Frame(root, width=480, height=320)
+frame1.pack(fill="both", expand=1, side=BOTTOM)
+frame1.config(cursor="pirate")
+frame1.config(bg="lightblue")
+frame1.config(bd=25)
+frame1.config(relief="sunken")
+
+label1 = Label(frame1, text="Recording")
+label1.pack()
+label2 = Label(frame2, text="Song slice")
+label2.pack()
 
 
-def graphs(hz, song_data, name):
-    fig, axs = plt.subplots(2, 2)
-    fig.suptitle(name)
+def graphs(hz, song_data, fr):
+    for widget in fr.winfo_children():
+        widget.destroy()
 
     # graph 1
-
+    figure1 = plt.Figure(figsize=(3, 2), dpi=100)
+    axs1 = figure1.add_subplot(111)
     time_to_plot = np.arange(hz * 1, hz * 1.3, dtype=int)
-    axs[0, 0].plot(time_to_plot, song_data[time_to_plot])
-    axs[0, 0].set_title("Sound Signal Over Time")
-    axs[0, 0].set_xlabel("Time Index")
-    axs[0, 0].set_ylabel("Magnitude")
+    axs1.plot(time_to_plot, song_data[time_to_plot])
+    scatter1 = FigureCanvasTkAgg(figure1, fr)
+    scatter1.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
+    axs1.set_title("Sound Signal ")
+    axs1.set_xlabel("Time")
+    axs1.set_ylabel("Magnitude")
 
     # graph 2
+    figure2 = plt.Figure(figsize=(3, 2), dpi=100)
+    axs2 = figure2.add_subplot(111)
     N = len(song_data)
     fft = scipy.fft.fft(song_data)
     transform_y = 2.0 / N * np.abs(fft[0 : N // 2])
     transform_x = scipy.fft.fftfreq(N, 1 / hz)[: N // 2]
-    axs[1, 0].plot(transform_x, transform_y)
-    axs[1, 0].set_title("Fourier Transform")
-    axs[1, 0].set_xlabel("Frequency (Hz)")
-    axs[1, 0].set_ylabel("Amplitude")
-    axs[1, 0].set_xlim(0, 2000)
+    axs2.plot(transform_x, transform_y)
+    scatter2 = FigureCanvasTkAgg(figure2, fr)
+    scatter2.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
+    axs2.set_title("Fourier Transform ")
+    axs2.set_xlabel("Frequency (Hz)")
+    axs2.set_ylabel("Amplitude")
+    axs2.set_xlim(0, 2000)
 
     # graph 3
+    figure3 = plt.Figure(figsize=(3, 2), dpi=100)
+    axs3 = figure3.add_subplot(111)
     peaks, props = signal.find_peaks(transform_y, prominence=0, distance=1000)
     n_peaks = 15
     largest_peaks_indices = np.argpartition(props["prominences"], -n_peaks)[-n_peaks:]
     largest_peaks = peaks[largest_peaks_indices]
-    axs[0, 1].plot(transform_x, transform_y, label="Spectrum")
-    axs[0, 1].scatter(
+    axs3.plot(transform_x, transform_y, label="Spectrum")
+    axs3.scatter(
         transform_x[largest_peaks],
         transform_y[largest_peaks],
         color="r",
         zorder=10,
         label="Constrained Peaks",
     )
-    axs[0, 1].set_title("Picos audio completo")
-    axs[0, 1].set_xlabel("Frequency (Hz)")
-    axs[0, 1].set_ylabel("Amplitude")
-    axs[0, 1].set_xlim(0, 1000)
+    scatter3 = FigureCanvasTkAgg(figure3, fr)
+    scatter3.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
+    axs3.set_title("Picos audio ")
+    axs3.set_xlabel("Frequency (Hz)")
+    axs3.set_ylabel("Amplitude")
+    axs3.set_xlim(0, 1000)
 
     # graph 4
+    figure4 = plt.Figure(figsize=(3, 2), dpi=100)
+    axs4 = figure4.add_subplot(111)
+
     window_length_seconds = 1
     window_length_samples = int(window_length_seconds * hz)
     window_length_samples += window_length_samples % 2
@@ -149,14 +188,14 @@ def graphs(hz, song_data, name):
         for peak in peaks[largest_peaks]:
             frequency = frequencies[peak]
             constellation_map.append([time_idx, frequency])
-    axs[1, 1].scatter(*zip(*constellation_map))
-    axs[1, 1].set_title("Picos por ventana (1s) acumulados")
-    axs[1, 1].set_xlabel("Tiempo en seg")
-    axs[1, 1].set_ylabel("Frequency (hz)")
-    axs[1, 1].set_ylim(0, 1500)
 
-    fig.tight_layout()
-    fig.show()
+    axs4.scatter(*zip(*constellation_map))
+    scatter4 = FigureCanvasTkAgg(figure4, fr)
+    scatter4.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
+    axs4.set_title("Picos por seg acumulados")
+    axs4.set_xlabel("Tiempo en seg")
+    axs4.set_ylabel("Frequency (hz)")
+    axs4.set_ylim(0, 1500)
 
 
 # hz = samplerate = samples per second = muestras por segundo
@@ -194,6 +233,8 @@ def encontrar_picos(hz, song_data):
     return mapa_picos
 
 
+# key = hash (numero grande con binned frequencies y delta), value = lista de tuples con tiempo de pico ancla y song_id
+# database es la union de todos los hashes
 def crear_diccionarios(picos, song_id):
     hashes = {}
     hz_max = 44100  # Frecuencia maxima en archivos wav es 44.1 kHz cuando usas 16 bits
@@ -331,6 +372,8 @@ def get_song_slice(hashes, fname, rec_time):
     newAudio = AudioSegment.from_wav(file)
     newAudio = newAudio[slice_position : slice_position + rec_time * 1000]
     newAudio.export("snippet.wav", format="wav")
+    new_time = str(int(minutes)) + " min " + str(int(seconds)) + " sec"
+    return new_time
 
 
 database = load_database()
@@ -356,21 +399,18 @@ def top_3(file_name, time):
         print("\nBest Match:")
         print(f"{name}: {score[1]} matches con desfase de {score[0]}\n")
 
-    graphs(hz_recording, song_data_recording, "Recording")
-    try:
-        print("Finished recording \n")
-        print("Finding best song slice match, please wait...")
-        get_song_slice(hashes, song_name_index[song_id], time)
-    except Exception as e:
-        print(e)
+    graphs(hz_recording, song_data_recording, frame1)
+
+    print("Finished recording \n")
+    print("Finding best song slice match, please wait...")
+    pos = get_song_slice(hashes, song_name_index[song_id], time)
 
     dirname = os.path.dirname(__file__)
     file = os.path.join(dirname, "snippet.wav")
     hz_song_slice, song_slice_data = read(file)
-    try:
-        graphs(hz_song_slice, song_slice_data, name)
-    except Exception as e:
-        print(e)
+    graphs(hz_song_slice, song_slice_data, frame2)
+    delete_extra_files()
+    return [name, pos]
 
 
 def record(duration):
@@ -390,7 +430,8 @@ def record(duration):
     write("recording0.wav", frequency, recording)
     dirname = os.path.dirname(__file__)
     file = os.path.join(dirname, "recording0.wav")
-    top_3(file, duration)
+    name_pos = top_3(file, duration)
+    return name_pos
 
 
 def delete_extra_files():
@@ -414,19 +455,46 @@ def delete_extra_files():
             pass
 
 
-choice = int(input("Desea realizar una grabación? 1.Si 2.No --> "))
-if choice == 1:
-    while choice == 1:
-        time = int(input("Duración en seg? "))
-        record(time)
-        delete_extra_files()
-        choice = int(input("\nDesea realizar otra grabación? 1.Si 2.No --> "))
+# Interfaz
+
+fields = (
+    "Duración",
+    "Canción",
+    "Posición",
+)
 
 
-"""
-Bibliography:
+def Grabar(entries):
+    # period rate:
+    duracion = int(entries["Duración"].get())
+    name_pos = record(duracion)
+    entries["Canción"].delete(0, tk.END)
+    entries["Canción"].insert(0, name_pos[0])
+    entries["Posición"].delete(0, tk.END)
+    entries["Posición"].insert(0, name_pos[1])
 
-Li, A., & Wang, C. (n.d.). An Industrial-Strength Audio Search Algorithm. https://www.ee.columbia.edu/~dpwe/papers/Wang03-shazam.pdf
-"""
 
-k = input("press close to exit")
+def makeform(root, fields):
+    entries = {}
+    for field in fields:
+        row = tk.Frame(root)
+        lab = tk.Label(row, width=22, text=field + ": ", anchor="w")
+        ent = tk.Entry(row)
+        if field == "Duración":
+            ent.insert(0, "5")
+        else:
+            ent.insert(0, "(dejar en blanco)")
+        row.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
+        lab.pack(side=tk.LEFT)
+        ent.pack(side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+        entries[field] = ent
+    return entries
+
+
+if __name__ == "__main__":
+    ents = makeform(root, fields)
+    b1 = tk.Button(root, text="Comenzar grabación", command=(lambda e=ents: Grabar(e)))
+    b1.pack(side=tk.LEFT, padx=5, pady=5)
+    b2 = tk.Button(root, text="Quit", command=root.quit)
+    b2.pack(side=tk.LEFT, padx=5, pady=5)
+    root.mainloop()
