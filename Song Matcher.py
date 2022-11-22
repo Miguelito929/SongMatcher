@@ -120,7 +120,7 @@ def graphs(hz, song_data, fr, name, pos):
     axs2.set_title("Fourier Transform ")
     axs2.set_xlabel("Frequency (Hz)")
     axs2.set_ylabel("Amplitude")
-    axs2.set_xlim(0, 2000)
+    axs2.set_xlim(0, 1000)
 
     # graph 3
     figure3 = plt.Figure(figsize=(3, 2), dpi=100)
