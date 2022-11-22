@@ -1,9 +1,8 @@
 import sys
 import subprocess
 
-
+# Descargar paquetes necesarios:
 def load_libraries():
-    # Descargar paquetes necesarios:
     try:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "tqdm"])
     except Exception as e:
@@ -36,41 +35,6 @@ def load_libraries():
         subprocess.check_call([sys.executable, "-m", "pip", "install", "wave"])
     except Exception as e:
         print(e)
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "contextlib"])
-    except Exception as e:
-        print(e)
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "glob"])
-    except Exception as e:
-        print(e)
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "os"])
-    except Exception as e:
-        print(e)
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "tkinter"])
-    except Exception as e:
-        print(e)
-    try:
-        subprocess.check_call(
-            [
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "matplotlib.backends.backend_tkagg",
-            ]
-        )
-    except Exception as e:
-        print(e)
-    try:
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "FigureCanvasTkAgg"]
-        )
-    except Exception as e:
-        print(e)
-
 
 load_libraries()
 
