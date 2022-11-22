@@ -1,8 +1,9 @@
 import sys
 import subprocess
 
-# Descargar paquetes necesarios:
+
 def load_libraries():
+    # Descargar paquetes necesarios:
     try:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "tqdm"])
     except Exception as e:
@@ -36,7 +37,8 @@ def load_libraries():
     except Exception as e:
         print(e)
 
-load_libraries()
+
+# load_libraries()
 
 # Librerias que utilizaremos
 import os
@@ -60,6 +62,7 @@ import tkinter as tk
 from tkinter import Tk, Label, Button
 from tkinter import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 
 root = tk.Tk()
 root.title("Song Matcher")
@@ -97,7 +100,7 @@ def graphs(hz, song_data, fr, name, pos):
         label1.pack()
 
     # graph 1
-    figure1 = plt.Figure(figsize=(3, 2), dpi=100)
+    figure1 = plt.Figure(figsize=(3, 2), dpi=100, constrained_layout=True)
     axs1 = figure1.add_subplot(111)
     time_to_plot = np.arange(hz * 1, hz * 1.3, dtype=int)
     axs1.plot(time_to_plot, song_data[time_to_plot])
@@ -108,7 +111,7 @@ def graphs(hz, song_data, fr, name, pos):
     axs1.set_ylabel("Magnitude")
 
     # graph 2
-    figure2 = plt.Figure(figsize=(3, 2), dpi=100)
+    figure2 = plt.Figure(figsize=(3, 2), dpi=100, constrained_layout=True)
     axs2 = figure2.add_subplot(111)
     N = len(song_data)
     fft = scipy.fft.fft(song_data)
@@ -123,7 +126,7 @@ def graphs(hz, song_data, fr, name, pos):
     axs2.set_xlim(0, 1000)
 
     # graph 3
-    figure3 = plt.Figure(figsize=(3, 2), dpi=100)
+    figure3 = plt.Figure(figsize=(3, 2), dpi=100, constrained_layout=True)
     axs3 = figure3.add_subplot(111)
     peaks, props = signal.find_peaks(transform_y, prominence=0, distance=1000)
     n_peaks = 15
@@ -145,7 +148,7 @@ def graphs(hz, song_data, fr, name, pos):
     axs3.set_xlim(0, 1000)
 
     # graph 4
-    figure4 = plt.Figure(figsize=(3, 2), dpi=100)
+    figure4 = plt.Figure(figsize=(3, 2), dpi=100, constrained_layout=True)
     axs4 = figure4.add_subplot(111)
 
     window_length_seconds = 1
@@ -438,7 +441,7 @@ def delete_extra_files():
 
 # Interfaz
 
-fields = ("Duración", "Canción", "Posición", "Canciones disponibles")
+fields = ("Duración", "Canción", "Posición", "Canciones disponibles", "")
 
 
 def Grabar(entries):
@@ -455,30 +458,51 @@ song_tuples = list(sorted(song_name_index.items(), key=lambda x: x[1][1]))
 song_list = []
 for i in song_tuples:
     song_list.append(i[1])
-song_str = ""
-for i in song_list:
-    n = i.split(".")
+song_str1 = ""
+song_str2 = ""
+ran1 = len(song_list) // 2 - 1
+ran2 = len(song_list)
+
+for i in range(ran1):
+    n = song_list[i].split(".")
     n = n[0]
     j = 0
     while n[j : j + 5] != "songs":
         j += 1
     n = n[j + 6 :]
-    if i != song_list[-1]:
-        song_str = song_str + n + ", "
+    if song_list[i] != song_list[ran1 - 1]:
+        song_str1 = song_str1 + n + ", "
     else:
-        song_str = song_str + n
+        song_str1 = song_str1 + n
+
+for i in range(ran1, ran2):
+    n = song_list[i].split(".")
+    n = n[0]
+    j = 0
+    while n[j : j + 5] != "songs":
+        j += 1
+    n = n[j + 6 :]
+    if song_list[i] != song_list[-1]:
+        song_str2 = song_str2 + n + ", "
+    else:
+        song_str2 = song_str2 + n
 
 
 def makeform(root, fields):
     entries = {}
     for field in fields:
         row = tk.Frame(root)
-        lab = tk.Label(row, width=20, text=field + ": ", anchor="w")
-        ent = tk.Entry(row, width=180)
+        if field == "":
+            lab = tk.Label(row, width=20, text=field + "", anchor="w")
+        else:
+            lab = tk.Label(row, width=20, text=field + ": ", anchor="w")
+        ent = tk.Entry(row, width=150)
         if field == "Duración":
             ent.insert(0, "8")
         elif field == "Canciones disponibles":
-            ent.insert(0, song_str)
+            ent.insert(0, song_str1)
+        elif field == "":
+            ent.insert(0, song_str2)
         else:
             ent.insert(0, "(dejar en blanco)")
         row.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
@@ -495,3 +519,9 @@ if __name__ == "__main__":
     b2 = tk.Button(root, text="Quit", command=root.quit)
     b2.pack(side=tk.LEFT, padx=5, pady=5)
     root.mainloop()
+
+"""
+Bibliography:
+
+Li, A., & Wang, C. (n.d.). An Industrial-Strength Audio Search Algorithm. https://www.ee.columbia.edu/~dpwe/papers/Wang03-shazam.pdf
+"""
