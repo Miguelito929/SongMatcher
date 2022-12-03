@@ -106,9 +106,9 @@ def graphs(hz, song_data, fr, name, pos):
     axs1.plot(time_to_plot, song_data[time_to_plot])
     scatter1 = FigureCanvasTkAgg(figure1, fr)
     scatter1.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
-    axs1.set_title("Sound Signal ")
-    axs1.set_xlabel("Time")
-    axs1.set_ylabel("Magnitude")
+    axs1.set_title("Señal de sonido")
+    axs1.set_xlabel("Tiempo")
+    axs1.set_ylabel("Magnitud")
 
     # graph 2
     figure2 = plt.Figure(figsize=(3, 2), dpi=100, constrained_layout=True)
@@ -120,9 +120,9 @@ def graphs(hz, song_data, fr, name, pos):
     axs2.plot(transform_x, transform_y)
     scatter2 = FigureCanvasTkAgg(figure2, fr)
     scatter2.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
-    axs2.set_title("Fourier Transform ")
-    axs2.set_xlabel("Frequency (Hz)")
-    axs2.set_ylabel("Amplitude")
+    axs2.set_title("Transformada de Fourier ")
+    axs2.set_xlabel("Frecuencia (Hz)")
+    axs2.set_ylabel("Amplitud")
     axs2.set_xlim(0, 1000)
 
     # graph 3
@@ -143,8 +143,8 @@ def graphs(hz, song_data, fr, name, pos):
     scatter3 = FigureCanvasTkAgg(figure3, fr)
     scatter3.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
     axs3.set_title("Picos audio ")
-    axs3.set_xlabel("Frequency (Hz)")
-    axs3.set_ylabel("Amplitude")
+    axs3.set_xlabel("Frecuencia (Hz)")
+    axs3.set_ylabel("Amplitud")
     axs3.set_xlim(0, 1000)
 
     # graph 4
@@ -154,7 +154,7 @@ def graphs(hz, song_data, fr, name, pos):
     window_length_seconds = 1
     window_length_samples = int(window_length_seconds * hz)
     window_length_samples += window_length_samples % 2
-    frequencies, times, stft = signal.stft(
+    frecuencias, times, stft = signal.stft(
         song_data,
         hz,
         nperseg=window_length_samples,
@@ -170,15 +170,15 @@ def graphs(hz, song_data, fr, name, pos):
         n_peaks = 5
         largest_peaks = np.argpartition(props["prominences"], -n_peaks)[-n_peaks:]
         for peak in peaks[largest_peaks]:
-            frequency = frequencies[peak]
-            constellation_map.append([time_idx, frequency])
+            frequencia = frecuencias[peak]
+            constellation_map.append([time_idx, frequencia])
 
     axs4.scatter(*zip(*constellation_map))
     scatter4 = FigureCanvasTkAgg(figure4, fr)
     scatter4.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
     axs4.set_title("Picos por seg acumulados")
-    axs4.set_xlabel("Tiempo en seg")
-    axs4.set_ylabel("Frequency (hz)")
+    axs4.set_xlabel("Tiempo (s)")
+    axs4.set_ylabel("Frecuencia (hz)")
     axs4.set_ylim(0, 1500)
 
 
@@ -199,7 +199,6 @@ def encontrar_picos(hz, song_data):
     mapa_picos = []
 
     for idx_tiempo, interval in enumerate(stft.T):
-        # print(idx_tiempo)
         spectrum = abs(interval)  # Valores reales, no complejos
         picos, propiedades = signal.find_peaks(spectrum, prominence=0, distance=200)
 
@@ -244,7 +243,7 @@ song_name_index = {}
 
 
 def load_database():
-    print("Loading Database, please wait...")
+    print("\nCargando base de datos, por favor espere...")
     dirname = os.path.dirname(__file__)
     files = os.path.join(dirname, "songs")
 
@@ -285,7 +284,6 @@ def score_hashes_against_database(hashes, database):
             if delta not in song_scores_by_offset:
                 song_scores_by_offset[delta] = 0
             song_scores_by_offset[delta] += 1
-            # print("Source time: ", source_time)
 
         max = (0, 0)
         for offset, score in song_scores_by_offset.items():
@@ -306,19 +304,19 @@ last_file = 0
 
 def get_song_slice(hashes, fname, rec_time):
     slice_indexes = {}
-    accuracy = 5
+    exactitud = 5
     with contextlib.closing(wave.open(fname, "r")) as f:
         frames = f.getnframes()
         rate = f.getframerate()
         duration = frames / float(rate)
     windows = duration // rec_time
     windows = int(windows)
-    windows = windows * accuracy - (accuracy - 1)
+    windows = windows * exactitud - (exactitud - 1)
     slices = []
     global last_file
     last_file = windows
     for window in range(windows):
-        t1 = (window * 1000) / accuracy * rec_time
+        t1 = (window * 1000) / exactitud * rec_time
         t2 = t1 + 1000 * rec_time
 
         newAudio = AudioSegment.from_wav(fname)
@@ -346,7 +344,7 @@ def get_song_slice(hashes, fname, rec_time):
     pos = 10
     while slice_name[pos] != ".":
         pos += 1
-    slice_position = int(slice_name[10:pos]) / accuracy * rec_time
+    slice_position = int(slice_name[10:pos]) / exactitud * rec_time
     minutes = slice_position // 60
     seconds = slice_position - 60 * minutes
     print("Best song slice match at ", minutes, " min ", int(seconds), " sec")
@@ -356,15 +354,15 @@ def get_song_slice(hashes, fname, rec_time):
     newAudio = AudioSegment.from_wav(file)
     newAudio = newAudio[slice_position : slice_position + rec_time * 1000]
     newAudio.export("snippet.wav", format="wav")
-    new_time = str(int(minutes)) + " min " + str(int(seconds)) + " sec"
-    return new_time
+    tiempo_grabacion = str(int(minutes)) + " min " + str(int(seconds)) + " sec"
+    return tiempo_grabacion
 
 
 database = load_database()
 
 
 def best_match(file_name, time):
-    # Load a short recording with some background noise
+    # Carga una pequeña grabación de audio
     hz_recording, song_data_recording = read(file_name)
     # Create the constellation and hashes
     picos = encontrar_picos(hz_recording, song_data_recording)
@@ -385,8 +383,8 @@ def best_match(file_name, time):
 
     graphs(hz_recording, song_data_recording, frame1, None, None)
 
-    print("Finished recording \n")
-    print("Finding best song slice match, please wait...")
+    print("Grabación terminada \n")
+    print("Encontrando el tiempo donde empezó la grabación, por favor espere...")
     pos = get_song_slice(hashes, song_name_index[song_id], time)
 
     dirname = os.path.dirname(__file__)
@@ -398,20 +396,20 @@ def best_match(file_name, time):
 
 
 def record(duration):
-    # Sampling frequency
-    frequency = 44100
+    # Frecuencia de muestreo
+    frequencia = 44100
 
-    print("\n\nRecording, please wait...")
-    # to record audio from
-    # sound-device into a Numpy
-    recording = sd.rec(int(duration * frequency), samplerate=frequency, channels=1)
+    print("\n\nGrabando, por favor espere ...")
+    # para grabar audio
+    # sound-device = sd
+    recording = sd.rec(int(duration * frequencia), samplerate=frequencia, channels=1)
 
-    # Wait for the audio to complete
+    # Esperar a que el audio se complete
     sd.wait()
 
-    # using scipy to save the recording in .wav format
-    # This will convert the NumPy array to an audio file with the given sampling frequency
-    write("recording0.wav", frequency, recording)
+    # uso de scipy para guardar grabación en .wav 
+    # Convierte el NumPy array en un audio file con la frecuencia de muestreo dada
+    write("recording0.wav", frequencia, recording)
     dirname = os.path.dirname(__file__)
     file = os.path.join(dirname, "recording0.wav")
     name_pos = best_match(file, duration)
@@ -516,7 +514,7 @@ if __name__ == "__main__":
     ents = makeform(root, fields)
     b1 = tk.Button(root, text="Comenzar grabación", command=(lambda e=ents: Grabar(e)))
     b1.pack(side=tk.LEFT, padx=5, pady=5)
-    b2 = tk.Button(root, text="Quit", command=root.quit)
+    b2 = tk.Button(root, text="Cerrar", command=root.quit)
     b2.pack(side=tk.LEFT, padx=5, pady=5)
     root.mainloop()
 
